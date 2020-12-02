@@ -17,6 +17,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/unrolled/secure v1.0.8
+	go.mongodb.org/mongo-driver v1.4.4
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b // indirect
 	moul.io/http2curl v1.0.0 // indirect
 )

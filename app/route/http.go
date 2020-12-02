@@ -2,29 +2,36 @@ package route
 
 import (
 	"crypto/md5"
-	"crypto/tls"
 	"encoding/hex"
 	_ "encoding/json"
 	_ "errors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/parnurzeal/gorequest"
-	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"newhope/app/store/mongodb"
 	_struct "newhope/app/struct"
-	"newhope/config"
 )
 
 func SetupHttp(r *gin.Engine) {
-	v1 := r.Group("/rget")
+	v1 := r.Group("/server")
 	{
-		v1.GET("/task", HandleTask)
+		v1.GET("/login", HandleUserLogin)
+		v1.GET("/logout", HandleUserLogout)
+		v1.GET("/entry", HandleFormEntry)
+		v1.GET("/query", HandleFormQuery)
+		v1.GET("/register", HandleRegister)
 		v1.GET("/test", HandleTest)
 	}
 
-	v2 := r.Group("/rpost")
+	v2 := r.Group("/server")
 	{
-		v2.POST("/task", HandleTask)
+		v2.POST("/login", HandleUserLogin)
+		v2.POST("/logout", HandleUserLogout)
+		v2.POST("/entry", HandleFormEntry)
+		v2.POST("/query", HandleFormQuery)
+		v2.POST("/register", HandleRegister)
 		v2.POST("/test", HandleTest)
 	}
 
@@ -34,32 +41,83 @@ func SetupHttp(r *gin.Engine) {
 	}
 }
 
-func HandleTask(c *gin.Context) {
+func HandleUserLogin(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	result, code := userLogin(c.Request.FormValue("account"), c.Request.FormValue("password"))
+	if code == http.StatusOK {
+		session := sessions.Default(c)
+		session.Set("account", _struct.UserSession{Account: c.Request.FormValue("account")})
+		session.Save()
+	}
+	c.String(code, result)
+}
+
+func HandleUserLogout(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	auth, _ := checkSession(c)
 	if !auth {
-		c.String(http.StatusOK, "该用户未登录")
+		c.String(http.StatusOK, "Not logged in")
 		return
 	}
-	switch c.Request.FormValue("operation") {
-	case "UserLogin":
-		result, code := userLogin(c.Request.FormValue("username"), c.Request.FormValue("password"))
-		if code == http.StatusOK {
-			session := sessions.Default(c)
-			session.Set("user", _struct.UserSession{c.Request.FormValue("username")})
-			session.Save()
-		}
-		c.String(code, result)
-		break
-	case "UserLogout":
-		session := sessions.Default(c)
-		session.Delete("user")
-		session.Save()
-		c.String(http.StatusOK, "success")
-		break
-	default:
-		log.Error("default!!! operation is ", c.Request.FormValue("operation"))
+	session := sessions.Default(c)
+	session.Delete("account")
+	session.Save()
+	c.String(http.StatusOK, "success")
+}
+
+func HandleFormEntry(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	auth, account := checkSession(c)
+	if !auth {
+		c.String(http.StatusOK, "Not logged in")
+		return
 	}
+	id := primitive.NewObjectID()
+	filter := bson.M{"_id": id}
+	update := bson.D{
+		{"$set", bson.D{
+			{"_id", id},
+			{"company", c.Request.FormValue("company")},
+			{"jobs", c.Request.FormValue("jobs")},
+			{"working", c.Request.FormValue("working")},
+			{"leader", c.Request.FormValue("leader")},
+			{"time_limit", c.Request.FormValue("time_limit")},
+			{"exist_problem", c.Request.FormValue("exist_problem")},
+			{"problem_type", c.Request.FormValue("problem_type")},
+			{"account", account.Account},
+		}},
+	}
+	mongodb.UpdateRecord(filter, update, true)
+	c.String(http.StatusOK, "success")
+}
+
+func HandleFormQuery(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	auth, _ := checkSession(c)
+	if !auth {
+		c.String(http.StatusOK, "Not logged in")
+		return
+	}
+
+	response,_ := mongodb.QueryAllRecord()
+	c.String(http.StatusOK, response)
+}
+
+func HandleRegister(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	id := getMd5String("admin")
+	filter := bson.M{"_id": id}
+	update := bson.D{
+		{"$set", bson.D{
+			{"_id", id},
+			{"account", "admin"},
+			{"password", "123456"},
+			{"group", "admin"},
+			{"level", 0},
+		}},
+	}
+	mongodb.UpdateAccount(filter, update, true)
+	c.String(http.StatusOK, string("success"))
 }
 
 func HandleTest(c *gin.Context) {
@@ -67,32 +125,22 @@ func HandleTest(c *gin.Context) {
 	c.String(http.StatusOK, string("hello world!"))
 }
 
-func userLogin(username string, password string) (string, int) {
-	return string("success"), http.StatusOK
+func userLogin(account string, password string) (string, int) {
+	res, err := mongodb.QueryConditionAccount2json(bson.D{{"account", account},
+		{"password", password}})
+	if res == "[]" || err != nil {
+		return "failure", http.StatusNotFound
+	}
+	return "success", http.StatusOK
 }
 
 func checkSession(c *gin.Context) (bool, _struct.UserSession) {
 	session := sessions.Default(c)
-	user := session.Get("user")
+	user := session.Get("account")
 	if user == nil {
-		if c.Request.FormValue("operation") == "UserLogin" ||
-			c.Request.FormValue("operation") == "GetServiceUrl" {
-			return true, _struct.UserSession{}
-		} else {
-			return false, _struct.UserSession{}
-		}
+		return false, _struct.UserSession{}
 	}
 	return true, user.(_struct.UserSession)
-}
-
-func checkUser(username string, password string) bool {
-	var userIsExist = false
-	request := gorequest.New().TLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	resp, _, errs := request.Get(config.GetAuthUrl()).SetBasicAuth(username, password).Set("User-Agent", "ftp").End()
-	if len(errs) <= 0 && resp.StatusCode == 200 {
-		userIsExist = true
-	}
-	return userIsExist
 }
 
 func getMd5String(s string) string {
