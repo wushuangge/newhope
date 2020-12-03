@@ -12,16 +12,14 @@ ADD go.mod .
 ADD go.sum .
 RUN go mod download
 
-WORKDIR /go/src/taskdash
+WORKDIR /go/src/newhope
 
-ADD . /go/src/taskdash
-RUN CGO_ENABLED=0 go build -o taskdash /go/src/taskdash/app/main.go
+ADD . /go/src/newhope
+RUN CGO_ENABLED=0 go build -o newhope /go/src/newhope/app/main.go
 
 FROM alpine:latest AS final
 
 WORKDIR /app
-COPY --from=builder /go/src/taskdash/taskdash /app/
-COPY --from=builder /go/src/taskdash/config /app/config
-COPY --from=builder /go/src/taskdash/ui /app/ui
+COPY --from=builder /go/src/newhope/newhope /app/
 
-ENTRYPOINT ["/app/taskdash"]
+ENTRYPOINT ["/app/newhope"]

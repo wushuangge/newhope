@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"newhope/app/route"
 	"newhope/app/store/mongodb"
@@ -26,5 +27,6 @@ func main() {
 		log.Fatal("服务器启动失败:", err.Error())
 		return
 	}
+	fmt.Println("http服务启动成功！！！")
 	select {}
 }

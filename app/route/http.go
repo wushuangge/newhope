@@ -81,9 +81,9 @@ func HandleFormEntry(c *gin.Context) {
 			{"jobs", c.Request.FormValue("jobs")},
 			{"working", c.Request.FormValue("working")},
 			{"leader", c.Request.FormValue("leader")},
-			{"time_limit", c.Request.FormValue("time_limit")},
-			{"exist_problem", c.Request.FormValue("exist_problem")},
-			{"problem_type", c.Request.FormValue("problem_type")},
+			{"date", c.Request.FormValue("date")},
+			{"problem", c.Request.FormValue("problem")},
+			{"type", c.Request.FormValue("type")},
 			{"account", account.Account},
 		}},
 	}
@@ -105,15 +105,15 @@ func HandleFormQuery(c *gin.Context) {
 
 func HandleRegister(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	id := getMd5String("admin")
+	id := getMd5String(c.Request.FormValue("account"))
 	filter := bson.M{"_id": id}
 	update := bson.D{
 		{"$set", bson.D{
 			{"_id", id},
-			{"account", "admin"},
-			{"password", "123456"},
-			{"group", "admin"},
-			{"level", 0},
+			{"account", c.Request.FormValue("account")},
+			{"password", c.Request.FormValue("password")},
+			{"group", c.Request.FormValue("group")},
+			{"level", c.Request.FormValue("level")},
 		}},
 	}
 	mongodb.UpdateAccount(filter, update, true)

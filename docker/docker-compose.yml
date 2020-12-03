@@ -1,14 +1,59 @@
 version: '2'
 
 services:
-  taskdash:
-    image: taskdash_20200819
+  mongo:
+    image: mongo
+    container_name: mongo
+    hostname: mongo
     restart: always
-    hostname: taskdash
+    networks:
+      - newhope-network
+    ports:
+      - "27018:27017"
+    environment:
+      TZ: Asia/Shanghai
+      MONGO_INITDB_DATABASE: task
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    volumes:
+      - /etc/localtime:/etc/localtime
+      - /home/wusg/mongo/data:/data/db
+    command: mongod
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    links:
+      - mongo:mongo
+    depends_on:
+      - mongo
+    networks:
+      - newhope-network
+    ports:
+      - "27019:8081"
+    environment:
+      ME_CONFIG_OPTIONS_EDITORTHEME: 3024-night
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: 123456
+      ME_CONFIG_BASICAUTH_USERNAME: root
+      ME_CONFIG_BASICAUTH_PASSWORD: 123456
+
+  newhope:
+    image: newhope
+    depends_on:
+      - mongo
+      - mongo-express
+    restart: always
+    hostname: newhope
     ports:
       - "8080:8080"
     networks:
-      - taskdash-network
+      - newhope-network
+    volumes:
+      - /home/wusg/Disk/newhope/config:/app/config
+
 networks:
-  taskdash-network:
+  newhope-network:
     driver: bridge
