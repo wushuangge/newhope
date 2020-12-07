@@ -56,13 +56,12 @@ func InitMongoDB() error {
 	if err != nil {
 		return err
 	}
-
 	task := mongoDB.GetDBByName("newhope")
 	collMap = make(map[string]*Coll)
-
 	collMap["record"] = task.GetCollByName("record")
 	collMap["account"] = task.GetCollByName("account")
 	collMap["backup"] = task.GetCollByName("backup")
+	collMap["terms"] = task.GetCollByName("terms")
 	return nil
 }
 
