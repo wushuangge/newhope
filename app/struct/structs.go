@@ -1,9 +1,13 @@
 package _struct
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type UserSession struct {
 	Account			string 	//账户id
+	Group			string	//账户组
+	Level			string	//账户级别
 }
 
 type AccountInfo struct {

@@ -13,24 +13,23 @@ func InsertAccount(document interface{}) error {
 }
 
 //condition query
-func QueryConditionAccount2json(filter interface{}) (string, error) {
+func QueryConditionAccount(filter interface{}) (_struct.AccountInfo, error) {
+	var account _struct.AccountInfo
 	cursor, err := collMap["account"].Find(filter)
 	if err != nil {
-		return "[]", err
+		return account, err
 	}
 	if err := cursor.Err(); err != nil {
-		return "[]", err
+		return account, err
 	}
-	var all = make([]interface{}, 0)
 	for cursor.Next(context.Background()) {
-		var account _struct.AccountInfo
 		err = cursor.Decode(&account)
 		if err == nil {
-			all = append(all, &account)
+			break
 		}
 	}
 	cursor.Close(context.Background())
-	return Interfaces2json(all), nil
+	return account, nil
 }
 
 //update

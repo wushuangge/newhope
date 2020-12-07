@@ -54,13 +54,23 @@ func SetupHttp(r *gin.Engine) {
 
 func HandleUserLogin(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	result, code := userLogin(c.Request.FormValue("account"), c.Request.FormValue("password"))
-	if code == http.StatusOK {
-		session := sessions.Default(c)
-		session.Set("account", _struct.UserSession{Account: c.Request.FormValue("account")})
-		session.Save()
+	responseMessage := _struct.ResponseMessage{}
+	account, err := mongodb.QueryConditionAccount(bson.D{{"account", c.Request.FormValue("account")},
+		{"password", c.Request.FormValue("password")}})
+	if account == (_struct.AccountInfo{}) || err != nil {
+		responseMessage.ErrCode = -1
+		responseMessage.ErrMessage = "密码不正确"
+		jsons, _ := json.Marshal(responseMessage)
+		c.String(http.StatusNotFound, string(jsons))
 	}
-	c.String(code, result)
+	responseMessage.ErrCode = 0
+	responseMessage.ErrMessage = "登录成功"
+	jsons, _ := json.Marshal(responseMessage)
+	session := sessions.Default(c)
+	session.Set("account", _struct.UserSession{Account: account.Account,
+		Group: account.Group,Level: account.Level})
+	session.Save()
+	c.String(http.StatusOK, string(jsons))
 }
 
 func HandleUserLogout(c *gin.Context) {
@@ -129,7 +139,7 @@ func HandleEntryForm(c *gin.Context) {
 func HandleQueryForm(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	responseMessage := _struct.ResponseMessage{}
-	auth, _ := checkSession(c)
+	auth, account := checkSession(c)
 	if !auth {
 		responseMessage.ErrCode = -1
 		responseMessage.ErrMessage = "账户未登录"
@@ -137,7 +147,12 @@ func HandleQueryForm(c *gin.Context) {
 		c.String(http.StatusOK, string(jsons))
 		return
 	}
-	response,_ := mongodb.QueryAllRecord()
+	var response string
+	if account.Level == "0"{
+		response,_ = mongodb.QueryAllRecord()
+	}else {
+		response,_ = mongodb.QueryConditionRecord(bson.D{{"account", account.Account}})
+	}
 	responseMessage.ErrCode = 0
 	responseMessage.ErrMessage = "查询成功"
 	responseMessage.Body = response
@@ -324,22 +339,6 @@ func HandleUnregister(c *gin.Context) {
 func HandleTest(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	c.String(http.StatusOK, string("hello world!"))
-}
-
-func userLogin(account string, password string) (string, int) {
-	responseMessage := _struct.ResponseMessage{}
-	res, err := mongodb.QueryConditionAccount2json(bson.D{{"account", account},
-		{"password", password}})
-	if res == "[]" || err != nil {
-		responseMessage.ErrCode = -1
-		responseMessage.ErrMessage = "密码不正确"
-		jsons, _ := json.Marshal(responseMessage)
-		return string(jsons), http.StatusNotFound
-	}
-	responseMessage.ErrCode = 0
-	responseMessage.ErrMessage = "登录成功"
-	jsons, _ := json.Marshal(responseMessage)
-	return string(jsons), http.StatusOK
 }
 
 func checkSession(c *gin.Context) (bool, _struct.UserSession) {
