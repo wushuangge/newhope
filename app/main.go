@@ -7,7 +7,28 @@ import (
 	"newhope/app/store/mongodb"
 	"newhope/config"
 	"newhope/util"
+	"os"
 )
+
+func init()  {
+	if !isDir("./images") {
+		fmt.Println("./images 不是一个目录, 正在创建目录", "...")
+		err := os.Mkdir("./images", 0666)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("./images", "创建目录成功")
+	}
+}
+
+func isDir(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return s.IsDir()
+}
 
 func main() {
 	var err error

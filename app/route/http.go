@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	_ "encoding/json"
 	_ "errors"
+	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"newhope/app/store/mongodb"
 	_struct "newhope/app/struct"
+	"os"
 )
 
 func SetupHttp(r *gin.Engine) {
@@ -28,6 +30,8 @@ func SetupHttp(r *gin.Engine) {
 		v1.GET("/deleteterms", HandleDeleteTerms)
 		v1.GET("/register", HandleRegister)
 		v1.GET("/unregister", HandleUnregister)
+		v1.GET("/upload", HandleUpload)
+		v1.GET("/download", HandleDownload)
 		v1.GET("/test", HandleTest)
 	}
 
@@ -43,6 +47,8 @@ func SetupHttp(r *gin.Engine) {
 		v2.POST("/deleteterms", HandleDeleteTerms)
 		v2.POST("/register", HandleRegister)
 		v2.POST("/unregister", HandleUnregister)
+		v2.POST("/uploadfile", HandleUpload)
+		v2.POST("/download", HandleDownload)
 		v2.POST("/test", HandleTest)
 	}
 
@@ -62,9 +68,13 @@ func HandleUserLogin(c *gin.Context) {
 		responseMessage.ErrMessage = "密码不正确"
 		jsons, _ := json.Marshal(responseMessage)
 		c.String(http.StatusNotFound, string(jsons))
+		return
 	}
+	account.Password = "******"
+	body, _ := json.Marshal(account)
 	responseMessage.ErrCode = 0
 	responseMessage.ErrMessage = "登录成功"
+	responseMessage.Body = string(body)
 	jsons, _ := json.Marshal(responseMessage)
 	session := sessions.Default(c)
 	session.Set("account", _struct.UserSession{Account: account.Account,
@@ -126,12 +136,13 @@ func HandleEntryForm(c *gin.Context) {
 			{"date", c.Request.FormValue("date")},
 			{"problem", c.Request.FormValue("problem")},
 			{"type", c.Request.FormValue("type")},
+			{"filename", c.Request.FormValue("filename")},
 			{"account", account.Account},
 		}},
 	}
 	mongodb.UpdateRecord(filter, update, true)
 	responseMessage.ErrCode = 0
-	responseMessage.ErrMessage = "信息录入成功"
+	responseMessage.ErrMessage = "操作成功"
 	jsons, _ := json.Marshal(responseMessage)
 	c.String(http.StatusOK, string(jsons))
 }
@@ -227,7 +238,7 @@ func HandleEntryTerms(c *gin.Context){
 	}
 	mongodb.UpdateTerms(filter, update, true)
 	responseMessage.ErrCode = 0
-	responseMessage.ErrMessage = "信息录入成功"
+	responseMessage.ErrMessage = "操作成功"
 	jsons, _ := json.Marshal(responseMessage)
 	c.String(http.StatusOK, string(jsons))
 }
@@ -336,6 +347,33 @@ func HandleUnregister(c *gin.Context) {
 	c.String(http.StatusOK, string(jsons))
 }
 
+func HandleUpload(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	form, _ := c.MultipartForm()
+	files := form.File["upload"]
+	for _, file := range files {
+		c.SaveUploadedFile(file, "./images/" + file.Filename)
+	}
+	c.String(http.StatusOK, fmt.Sprintf("%d 个文件被上传成功!", len(files)))
+}
+
+func HandleDownload(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	filename := c.Request.FormValue("filename")
+	filepath := "./images/" + filename
+	if !fileIsExist(filepath){
+		responseMessage := _struct.ResponseMessage{}
+		responseMessage.ErrCode = -1
+		responseMessage.ErrMessage = filename + "文件不存在"
+		jsons, _ := json.Marshal(responseMessage)
+		c.String(http.StatusOK, string(jsons))
+		return
+	}
+	c.Writer.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.Writer.Header().Add("Content-Type", "application/octet-stream")
+	c.File(filepath)
+}
+
 func HandleTest(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	c.String(http.StatusOK, string("hello world!"))
@@ -354,4 +392,12 @@ func getMd5String(s string) string {
 	h := md5.New()
 	h.Write([]byte(s))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func fileIsExist(filename string) bool {
+	var exist = true
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		exist = false
+	}
+	return exist
 }

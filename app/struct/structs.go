@@ -27,7 +27,8 @@ type EntryInfo struct {
 	Date			string `bson:"date"`			//整改期限
 	Problem 		string `bson:"problem"`			//是否存在问题
 	Type 			string `bson:"type"`			//问题类型
-	Account         string `bson:"account"`			//操作人
+	Filename		string `bson:"filename"`		//文件名字
+	Account			string `bson:"account"`			//操作人
 }
 
 type TermsInfo struct {

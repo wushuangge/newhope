@@ -5,10 +5,10 @@ http://47.111.252.117:8080/server/login?account=admin&password=123456
 http://47.111.252.117:8080/server/logout?account=admin&password=123456
 
 # 增加表单
-http://47.111.252.117:8080/server/entryform?company=琴牌牛奶&jobs=收奶&working=张三&leader=李四&date=20201213&problem=是&type=标准不符
+http://47.111.252.117:8080/server/entryform?company=琴牌牛奶&jobs=收奶&working=张三&leader=李四&date=20201213&problem=是&type=标准不符&filename=a.png
 
 # 修改表单
-http://47.111.252.117:8080/server/entryform?id=5fc88010ffaff854e8d3779f&company=琴牌牛奶&jobs=收奶&working=张三&leader=李四&date=20201213&problem=是&type=标准不符
+http://47.111.252.117:8080/server/entryform?id=5fc88010ffaff854e8d3779f&company=琴牌牛奶&jobs=收奶&working=张三&leader=李四&date=20201213&problem=是&type=标准不符&filename=a.png
 
 # 查询表单
 http://47.111.252.117:8080/server/queryform
@@ -33,3 +33,9 @@ http://47.111.252.117:8080/server/register?account=admin&password=123456&level=1
 
 # 删除账户
 http://47.111.252.117:8080/server/unregister?id=21232f297a57a5a743894a0e4a801fc3
+
+#上传文件
+curl -F "upload=@./a.png" -X POST http://47.111.252.117:8080/server/upload
+
+#下载文件
+http://47.111.252.117:8080/server/download?filename=a.png
