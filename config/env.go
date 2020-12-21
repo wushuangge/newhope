@@ -62,6 +62,9 @@ type (
 		//authUrl
 		AuthUrl  string
 		UsersUrl string
+
+		//imagesPath
+		ImagesPath string
 	}
 )
 
@@ -143,4 +146,8 @@ func GetAuthUrl() string {
 
 func GetUsersUrl() string {
 	return envConf.UsersUrl
+}
+
+func GetImagesPath() string {
+	return envConf.ImagesPath
 }

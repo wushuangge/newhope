@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"newhope/app/store/mongodb"
 	_struct "newhope/app/struct"
+	"newhope/config"
 	"os"
 )
 
@@ -24,6 +25,7 @@ func SetupHttp(r *gin.Engine) {
 		v1.GET("/logout", HandleUserLogout)
 		v1.GET("/entryform", HandleEntryForm)
 		v1.GET("/queryform", HandleQueryForm)
+		v1.GET("/search", HandleSearch)
 		v1.GET("/deleteform", HandleDeleteForm)
 		v1.GET("/entryterms", HandleEntryTerms)
 		v1.GET("/queryterms", HandleQueryTerms)
@@ -41,6 +43,7 @@ func SetupHttp(r *gin.Engine) {
 		v2.POST("/logout", HandleUserLogout)
 		v2.POST("/entryform", HandleEntryForm)
 		v2.POST("/queryform", HandleQueryForm)
+		v2.POST("/search", HandleSearch)
 		v2.POST("/deleteform", HandleDeleteForm)
 		v2.POST("/entryterms", HandleEntryTerms)
 		v2.POST("/queryterms", HandleQueryTerms)
@@ -135,8 +138,9 @@ func HandleEntryForm(c *gin.Context) {
 			{"leader", c.Request.FormValue("leader")},
 			{"date", c.Request.FormValue("date")},
 			{"problem", c.Request.FormValue("problem")},
-			{"type", c.Request.FormValue("type")},
 			{"filename", c.Request.FormValue("filename")},
+			{"score", c.Request.FormValue("score")},
+			{"type", c.Request.FormValue("type")},
 			{"account", account.Account},
 		}},
 	}
@@ -164,6 +168,35 @@ func HandleQueryForm(c *gin.Context) {
 	}else {
 		response,_ = mongodb.QueryConditionRecord(bson.D{{"account", account.Account}})
 	}
+	responseMessage.ErrCode = 0
+	responseMessage.ErrMessage = "查询成功"
+	responseMessage.Body = response
+	jsons, _ := json.Marshal(responseMessage)
+	c.String(http.StatusOK, string(jsons))
+}
+
+func HandleSearch(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	responseMessage := _struct.ResponseMessage{}
+	auth, account := checkSession(c)
+	if !auth {
+		responseMessage.ErrCode = -1
+		responseMessage.ErrMessage = "账户未登录"
+		jsons, _ := json.Marshal(responseMessage)
+		c.String(http.StatusOK, string(jsons))
+		return
+	}
+
+	if account.Level != "0"{
+		responseMessage.ErrCode = -1
+		responseMessage.ErrMessage = "该账户没有权限"
+		jsons, _ := json.Marshal(responseMessage)
+		c.String(http.StatusOK, string(jsons))
+		return
+	}
+	var response string
+	response,_ = mongodb.QueryConditionRecord(bson.D{{"leader", c.Request.FormValue("leader")},
+		{"date",primitive.Regex{Pattern: c.Request.FormValue("date")}}})
 	responseMessage.ErrCode = 0
 	responseMessage.ErrMessage = "查询成功"
 	responseMessage.Body = response
@@ -234,6 +267,7 @@ func HandleEntryTerms(c *gin.Context){
 		{"$set", bson.D{
 			{"_id", id},
 			{"terms", c.Request.FormValue("terms")},
+			{"score", c.Request.FormValue("score")},
 		}},
 	}
 	mongodb.UpdateTerms(filter, update, true)
@@ -351,8 +385,9 @@ func HandleUpload(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	form, _ := c.MultipartForm()
 	files := form.File["upload"]
+	path := config.GetImagesPath()
 	for _, file := range files {
-		c.SaveUploadedFile(file, "./images/" + file.Filename)
+		c.SaveUploadedFile(file, path + "/" + file.Filename)
 	}
 	body,_ := json.Marshal(len(files))
 	responseMessage := _struct.ResponseMessage{}
@@ -371,7 +406,7 @@ func HandleUpload(c *gin.Context) {
 func HandleDownload(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	filename := c.Request.FormValue("filename")
-	filepath := "./images/" + filename
+	filepath := config.GetImagesPath() + "/" + filename
 	if !fileIsExist(filepath){
 		responseMessage := _struct.ResponseMessage{}
 		responseMessage.ErrCode = -1

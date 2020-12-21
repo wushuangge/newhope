@@ -11,14 +11,17 @@ import (
 )
 
 func init()  {
-	if !isDir("./images") {
-		fmt.Println("./images 不是一个目录, 正在创建目录", "...")
-		err := os.Mkdir("./images", 0666)
+	//初始化配置文件
+	config.InitEnvConf()
+	path := config.GetImagesPath()
+	if !isDir(path) {
+		fmt.Println(path, "不是一个目录, 正在创建目录", "...")
+		err := os.Mkdir(path, 0666)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("./images", "创建目录成功")
+		fmt.Println(path, "创建目录成功")
 	}
 }
 
@@ -32,8 +35,6 @@ func isDir(path string) bool {
 
 func main() {
 	var err error
-	//初始化配置文件
-	config.InitEnvConf()
 	//初始化日志
 	util.InitLogger()
 	//初始化mongodb

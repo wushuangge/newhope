@@ -26,14 +26,16 @@ type EntryInfo struct {
 	Leader			string `bson:"leader"`			//整改责任人
 	Date			string `bson:"date"`			//整改期限
 	Problem 		string `bson:"problem"`			//是否存在问题
-	Type 			string `bson:"type"`			//问题类型
 	Filename		string `bson:"filename"`		//文件名字
+	Score 			string `bson:"score"`			//扣分
+	Type 			string `bson:"type"`			//问题类型
 	Account			string `bson:"account"`			//操作人
 }
 
 type TermsInfo struct {
 	Id				primitive.ObjectID `bson:"_id"`
 	Terms			string `bson:"terms"`			//违规条款
+	Score 			string `bson:"score"`			//扣分
 }
 
 type ResponseMessage struct {
