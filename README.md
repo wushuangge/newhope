@@ -5,10 +5,10 @@ http://47.111.252.117:8080/server/login?account=admin&password=123456
 http://47.111.252.117:8080/server/logout?account=admin&password=123456
 
 # 增加表单
-http://47.111.252.117:8080/server/entryform?company=琴牌牛奶&jobs=收奶&working=张三&leader=李四&date=20201213&problem=是&type=标准不符&filename=a.png
+http://47.111.252.117:8080/server/entryform?company=琴牌牛奶&jobs=收奶&working=张三&leader=李四&date=20201213&problem=是&type=标准不符&filename=a.png&score=11
 
 # 修改表单
-http://47.111.252.117:8080/server/entryform?id=5fc88010ffaff854e8d3779f&company=琴牌牛奶&jobs=收奶&working=张三&leader=李四&date=20201213&problem=是&type=标准不符&filename=a.png
+http://47.111.252.117:8080/server/entryform?id=5fc88010ffaff854e8d3779f&company=琴牌牛奶&jobs=收奶&working=张三&leader=李四&date=20201213&problem=是&type=标准不符&filename=a.png&score=11
 
 # 查询表单
 http://47.111.252.117:8080/server/queryform
@@ -17,10 +17,10 @@ http://47.111.252.117:8080/server/queryform
 http://47.111.252.117:8080/server/deleteform?id=5fc88010ffaff854e8d3779f
 
 # 增加条款
-http://47.111.252.117:8080/server/entryterms?terms="标准不符"
+http://47.111.252.117:8080/server/entryterms?terms="标准不符"&score=11
 
 # 修改条款
-http://47.111.252.117:8080/server/entryterms?id=5fc88010ffaff854e8d3779f&terms="标准不符"
+http://47.111.252.117:8080/server/entryterms?id=5fc88010ffaff854e8d3779f&terms="标准不符"&score=12
 
 # 查询条款
 http://47.111.252.117:8080/server/queryterms
