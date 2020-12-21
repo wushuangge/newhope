@@ -47,7 +47,7 @@ func SetupHttp(r *gin.Engine) {
 		v2.POST("/deleteterms", HandleDeleteTerms)
 		v2.POST("/register", HandleRegister)
 		v2.POST("/unregister", HandleUnregister)
-		v2.POST("/uploadfile", HandleUpload)
+		v2.POST("/upload", HandleUpload)
 		v2.POST("/download", HandleDownload)
 		v2.POST("/test", HandleTest)
 	}
@@ -354,7 +354,18 @@ func HandleUpload(c *gin.Context) {
 	for _, file := range files {
 		c.SaveUploadedFile(file, "./images/" + file.Filename)
 	}
-	c.String(http.StatusOK, fmt.Sprintf("%d 个文件被上传成功!", len(files)))
+	body,_ := json.Marshal(len(files))
+	responseMessage := _struct.ResponseMessage{}
+	if (len(files) == 0) {
+		responseMessage.ErrCode = -1
+		responseMessage.ErrMessage = "上传失败"
+	}else {
+		responseMessage.ErrCode = 0
+		responseMessage.ErrMessage = "上传成功"
+	}
+	responseMessage.Body = string(body)
+	jsons, _ := json.Marshal(responseMessage)
+	c.String(http.StatusOK, string(jsons))
 }
 
 func HandleDownload(c *gin.Context) {
