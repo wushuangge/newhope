@@ -32,6 +32,7 @@ func SetupHttp(r *gin.Engine) {
 		v1.GET("/deleteterms", HandleDeleteTerms)
 		v1.GET("/register", HandleRegister)
 		v1.GET("/unregister", HandleUnregister)
+		v1.GET("/modifypwd", HandleModifyPassword)
 		v1.GET("/upload", HandleUpload)
 		v1.GET("/download", HandleDownload)
 		v1.GET("/test", HandleTest)
@@ -50,6 +51,7 @@ func SetupHttp(r *gin.Engine) {
 		v2.POST("/deleteterms", HandleDeleteTerms)
 		v2.POST("/register", HandleRegister)
 		v2.POST("/unregister", HandleUnregister)
+		v2.POST("/modifypwd", HandleModifyPassword)
 		v2.POST("/upload", HandleUpload)
 		v2.POST("/download", HandleDownload)
 		v2.POST("/test", HandleTest)
@@ -377,6 +379,41 @@ func HandleUnregister(c *gin.Context) {
 	mongodb.DeleteAccount(filter)
 	responseMessage.ErrCode = 0
 	responseMessage.ErrMessage = "删除成功"
+	jsons, _ := json.Marshal(responseMessage)
+	c.String(http.StatusOK, string(jsons))
+}
+
+func HandleModifyPassword(c *gin.Context) {
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	responseMessage := _struct.ResponseMessage{}
+	if len(c.Request.FormValue("newpassword")) == 0 {
+		responseMessage.ErrCode = -1
+		responseMessage.ErrMessage = "新密码为空"
+		jsons, _ := json.Marshal(responseMessage)
+		c.String(http.StatusOK, string(jsons))
+		return
+	}
+	id := getMd5String(c.Request.FormValue("account"))
+	acc,_ := mongodb.QueryConditionAccount(bson.D{{"_id", id},
+		{"password",c.Request.FormValue("oldpassword")}})
+	if len(acc.Account) == 0 {
+		responseMessage.ErrCode = -1
+		responseMessage.ErrMessage = "账户或密码不存在"
+		jsons, _ := json.Marshal(responseMessage)
+		c.String(http.StatusOK, string(jsons))
+		return
+	}
+	filter := bson.M{"_id": id}
+	update := bson.D{
+		{"$set", bson.D{
+			{"_id", id},
+			{"account", c.Request.FormValue("account")},
+			{"password", c.Request.FormValue("newpassword")},
+		}},
+	}
+	mongodb.UpdateAccount(filter, update, false)
+	responseMessage.ErrCode = 0
+	responseMessage.ErrMessage = "密码修改成功"
 	jsons, _ := json.Marshal(responseMessage)
 	c.String(http.StatusOK, string(jsons))
 }
