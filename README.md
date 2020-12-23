@@ -16,6 +16,9 @@ http://47.111.252.117:8080/server/queryform
 # 删除表单
 http://47.111.252.117:8080/server/deleteform?id=5fc88010ffaff854e8d3779f
 
+# 检索
+http://47.111.252.117:8080/server/search?leader=李四&date=202011
+
 # 增加条款
 http://47.111.252.117:8080/server/entryterms?terms="标准不符"&score=11
 
@@ -33,6 +36,9 @@ http://47.111.252.117:8080/server/register?account=admin&password=123456&level=1
 
 # 删除账户
 http://47.111.252.117:8080/server/unregister?id=21232f297a57a5a743894a0e4a801fc3
+
+# 密码修改
+http://47.111.252.117:8080/server/modifypwd?account=admin&oldpassword=123123&newpassword=123456
 
 #上传文件
 curl -F "upload=@./a.png" -X POST http://47.111.252.117:8080/server/upload
