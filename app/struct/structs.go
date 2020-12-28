@@ -29,6 +29,7 @@ type EntryInfo struct {
 	Filename		string `bson:"filename"`		//文件名字
 	Score 			string `bson:"score"`			//扣分
 	Type 			string `bson:"type"`			//问题类型
+	Recheck			string `bson:"recheck"`			//复检
 	Account			string `bson:"account"`			//操作人
 }
 

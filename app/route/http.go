@@ -143,6 +143,7 @@ func HandleEntryForm(c *gin.Context) {
 			{"filename", c.Request.FormValue("filename")},
 			{"score", c.Request.FormValue("score")},
 			{"type", c.Request.FormValue("type")},
+			{"recheck", c.Request.FormValue("recheck")},
 			{"account", account.Account},
 		}},
 	}
